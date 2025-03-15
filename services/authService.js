@@ -10,7 +10,7 @@ const registerUser = async ({ name, email, password }) => {
   const user = new User({ name, email, password: hashedPassword });
 
   await user.save();
-  return { message: "Registration successful!" };
+  return { name: user.name, email: user.email, };
 };
 
 const loginUser = async ({ email, password }) => {
@@ -24,7 +24,7 @@ const loginUser = async ({ email, password }) => {
     expiresIn: "1h",
   });
 
-  return { token, user: { id: user._id, name: user.name, email: user.email } };
+  return { token, user: { id: user._id, name: user.name, email: user.email, }, };
 };
 
 module.exports = { registerUser, loginUser };
