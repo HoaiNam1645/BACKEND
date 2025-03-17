@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { ORDER_STATUS, PAYMENT_METHOD } = require("../Helper/enums");
 
 const OrderSchema = new mongoose.Schema(
   {
@@ -6,12 +7,12 @@ const OrderSchema = new mongoose.Schema(
     totalAmount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "processing", "shipped", "delivered", "canceled"],
+      enum: Object.values(ORDER_STATUS),
       default: "pending",
     },
     paymentMethod: {
       type: String,
-      enum: ["cod", "credit_card", "paypal"],
+      enum: Object.values(PAYMENT_METHOD),
       required: true,
     },
   },

@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const AIRecommentSchema = new mongoose.Schema(
   {
     user_id: { type: String, required: true },
