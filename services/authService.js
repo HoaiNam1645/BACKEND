@@ -1,30 +1,59 @@
-const User = require("../models/User");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const { STATUS_CODE } = require("../Helper/enums");
 
-const registerUser = async ({ name, email, password }) => {
-  const existingUser = await User.findOne({ email });
-  if (existingUser) throw new Error("Email already exists!");
+const register = async (userData) => {
+  try {
+    const existingUser = await User.findOne({ email: userData.email });
+    if (existingUser) {
+      return {
+        code: STATUS_CODE.BAD_REQUEST,
+        success: false,
+        message: "Email already exists!",
+      };
+    }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const user = new User({ name, email, password: hashedPassword });
+    const saltRounds = 10;
+    userData.password = await bcrypt.hash(userData.password, saltRounds);
+    const user = await User.create(userData);
 
-  await user.save();
-  return { name: user.name, email: user.email, };
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: { id: user._id, name: user.name, email: user.email },
+    };
+  } catch (error) {
+    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+  }
 };
 
-const loginUser = async ({ email, password }) => {
-  const user = await User.findOne({ email });
-  if (!user) throw new Error("Wrong email or password!");
+const login = async ({ email, password }) => {
+  try {
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return {
+        code: STATUS_CODE.UNAUTHORIZED,
+        success: false,
+        message: "Wrong email or password!",
+      };
+    }
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) throw new Error("Wrong email or password!");
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
-
-  return { token, user: { id: user._id, name: user.name, email: user.email, }, };
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: {
+        token,
+        user: { id: user._id, name: user.name, email: user.email },
+      },
+    };
+  } catch (error) {
+    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+  }
 };
 
-module.exports = { registerUser, loginUser };
+module.exports = { register, login };

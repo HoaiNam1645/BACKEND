@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { TRANSACTION_STATUS } = require("../Helper/enums");
 
 const TransactionSchema = new mongoose.Schema(
   {
@@ -10,7 +11,7 @@ const TransactionSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "completed", "failed"],
+      enum: Object.values(TRANSACTION_STATUS),
       default: "pending",
     },
   },
