@@ -3,11 +3,11 @@ const mongoose = require("mongoose");
 const ProductSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    description: String,
+    description: { type: String, default: "" },
     price: { type: Number, required: true },
     stock: { type: Number, required: true, default: 0 },
-    category_id: { type: String },
-    image_url: String,
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+    image_url: { type: String, default: "" },
   },
   { timestamps: true }
 );

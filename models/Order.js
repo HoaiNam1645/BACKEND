@@ -3,7 +3,11 @@ const { ORDER_STATUS, PAYMENT_METHOD } = require("../Helper/enums");
 
 const OrderSchema = new mongoose.Schema(
   {
-    user_id: { type: String, required: true },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     totalAmount: { type: Number, required: true },
     status: {
       type: String,

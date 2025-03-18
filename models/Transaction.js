@@ -3,11 +3,16 @@ const { TRANSACTION_STATUS } = require("../Helper/enums");
 
 const TransactionSchema = new mongoose.Schema(
   {
-    order_id: {
-      type: String,
+    orderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
       required: true,
     },
-    user_id: { type: String, required: true },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     amount: { type: Number, required: true },
     status: {
       type: String,

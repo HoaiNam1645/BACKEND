@@ -4,7 +4,7 @@ const { STATUS_CODE } = require("../Helper/enums");
 
 const getAllUsers = async () => {
   try {
-    const users = await User.find();
+    const users = await User.find().select("-password").lean();
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,

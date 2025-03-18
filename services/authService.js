@@ -1,11 +1,13 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { STATUS_CODE } = require("../Helper/enums");
 
 const register = async (userData) => {
   try {
-    const existingUser = await User.findOne({ email: userData.email });
+    const existingUser = await User.findOne({
+      email: userData.email.toLowerCase(),
+    });
     if (existingUser) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
@@ -14,14 +16,19 @@ const register = async (userData) => {
       };
     }
 
-    const saltRounds = 10;
-    userData.password = await bcrypt.hash(userData.password, saltRounds);
+    userData.email = userData.email.toLowerCase();
+    userData.password = await bcrypt.hash(userData.password, 10);
     const user = await User.create(userData);
 
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,
-      data: { id: user._id, name: user.name, email: user.email },
+      data: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
     };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
@@ -30,6 +37,7 @@ const register = async (userData) => {
 
 const login = async ({ email, password }) => {
   try {
+    email = email.toLowerCase();
     const user = await User.findOne({ email });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return {
@@ -39,16 +47,23 @@ const login = async ({ email, password }) => {
       };
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "3h" }
+    );
 
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,
       data: {
         token,
-        user: { id: user._id, name: user.name, email: user.email },
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+        },
       },
     };
   } catch (error) {

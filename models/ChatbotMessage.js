@@ -1,12 +1,25 @@
 const mongoose = require("mongoose");
 
-const ChatbotMessageSchema = new mongoose.Schema(
+const messageSchema = new mongoose.Schema(
   {
-    user_id: { type: String, required: true },
-    message: { type: String, required: true },
-    response: { type: String, required: true },
+    role: { type: String, enum: ["user", "system"], required: true },
+    content: { type: String, required: true },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+const chatbotMessageSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    messages: [messageSchema],
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("ChatbotMessage", ChatbotMessageSchema);
+module.exports = mongoose.model("ChatbotMessage", chatbotMessageSchema);
