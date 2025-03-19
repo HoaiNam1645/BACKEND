@@ -17,7 +17,7 @@ const getAllUsers = async () => {
 
 const getUserById = async (id) => {
   try {
-    const user = await User.findById(id);
+    const user = await User.findById(id).select("-password");
     if (!user)
       return {
         code: STATUS_CODE.BAD_REQUEST,

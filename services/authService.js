@@ -63,6 +63,7 @@ const login = async ({ email, password }) => {
           fullName: user.fullName,
           email: user.email,
           role: user.role,
+          avataUrl: user.avataUrl,
         },
       },
     };
