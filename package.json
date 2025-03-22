@@ -17,12 +17,16 @@
     "bcryptjs": "^3.0.2",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
+    "dateformat": "^5.0.3",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.12.1",
     "openai": "^4.87.3",
-    "server": "file:"
+    "qs": "^6.14.0",
+    "server": "file:",
+    "uuid": "^11.1.0",
+    "vnpay": "^2.1.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

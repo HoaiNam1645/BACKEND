@@ -1,6 +1,8 @@
 const express = require("express");
 const connectDB = require("./config/db");
 const cors = require("cors");
+const bodyParser = require("body-parser");
+const paymentRoutes = require("./routes/paymentRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const cartRoutes = require("./routes/cartRoutes");
@@ -19,6 +21,7 @@ require("dotenv").config();
 connectDB();
 
 app.use(cors());
+app.use(bodyParser.json());
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
@@ -32,6 +35,7 @@ app.use("/api/order-items", orderItemRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/payment", paymentRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}...`);
