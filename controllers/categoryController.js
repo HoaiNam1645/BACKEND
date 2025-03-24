@@ -11,7 +11,7 @@ const getCategoryById = async (req, res) => {
 };
 
 const createCategory = async (req, res) => {
-  const result = await categoryService.createCategory(req.body);
+  const result = await categoryService.createCategory(req,res);
   return res.status(result.code).json(result);
 };
 

@@ -23,11 +23,12 @@ connectDB();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
+app.use(express.static("public"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/carts", cartRoutes);
-app.use("/api/categories", categoryRoutes);
+app.use("/api/categories",categoryRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/orders", orderRoutes);

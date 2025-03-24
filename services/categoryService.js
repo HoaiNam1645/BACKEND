@@ -4,7 +4,11 @@ const { STATUS_CODE } = require("../Helper/enums");
 const getAllCategories = async () => {
   try {
     const categories = await Category.find();
-    return { code: STATUS_CODE.SUCCESS, success: true, data: categories };
+    const categoriesWithFullImageUrl = categories.map(category => ({
+      ...category._doc,
+      image_url: `http://localhost:5000${category.image_url}`
+    }));
+    return { code: STATUS_CODE.SUCCESS, success: true, data: categoriesWithFullImageUrl };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
@@ -26,9 +30,22 @@ const getCategoryById = async (id) => {
   }
 };
 
-const createCategory = async (categoryData) => {
+const createCategory = async (req, res) => {
   try {
-    const category = await Category.create(categoryData);
+    const { name } = req.body;
+    if (!name) {
+      return { code: STATUS_CODE.BAD_REQUEST, success: false, message: "Tên danh mục không được để trống." };
+    }
+
+    const existingCategory = await Category.findOne({ name: name.trim() });
+    if (existingCategory) {
+      return { code: STATUS_CODE.BAD_REQUEST, success: false, message: "Tên danh mục đã tồn tại." };
+    }
+
+    const imageUrl = req.file ? `/img/${req.file.filename}` : "";
+
+    const category = await Category.create({ name: name.trim(), image_url: imageUrl });
+
     return { code: STATUS_CODE.SUCCESS, success: true, data: category };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
