@@ -1,12 +1,15 @@
 const Category = require("../models/Category");
 const { STATUS_CODE } = require("../Helper/enums");
 
-const getAllCategories = async () => {
+const getAllCategories = async (req) => {
   try {
     const categories = await Category.find();
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    console.log(baseUrl);
+    
     const categoriesWithFullImageUrl = categories.map(category => ({
       ...category._doc,
-      image_url: `http://localhost:5000${category.image_url}`
+      image_url: category.image_url ? `${baseUrl}${category.image_url}` : null
     }));
     return { code: STATUS_CODE.SUCCESS, success: true, data: categoriesWithFullImageUrl };
   } catch (error) {
