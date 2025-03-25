@@ -25,10 +25,16 @@ const deleteUser = async (req, res) => {
   return res.status(result.code).json(result);
 };
 
+const searchUser = async (req, res) => {
+  const result = await userService.searchUser(req.body);
+  return res.status(result.code).json(result);
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
   createUser,
   updateUser,
   deleteUser,
+  searchUser,
 };

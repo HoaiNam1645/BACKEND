@@ -70,11 +70,38 @@ const deleteNews = async (id) => {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
 };
+const searchNews = async (searchData) => {
+  try {
+    let query = {};
 
+    if (searchData.searchParam) {
+      query.$or = [
+        { title: { $regex: searchData.searchParam, $options: "i" } },
+        { author: { $regex: searchData.searchParam, $options: "i" } },
+      ];
+    }
+    const news = await News.find(query);
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      message: "News retrieved successfully",
+      data: news,
+    };
+  } catch (error) {
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+      data: null,
+    };
+  }
+};
 module.exports = {
   getAllNews,
   getNewsById,
   createNews,
   updateNews,
   deleteNews,
+  searchNews,
 };

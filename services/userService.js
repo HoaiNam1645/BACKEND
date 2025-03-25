@@ -90,10 +90,45 @@ const deleteUser = async (id) => {
   }
 };
 
+const searchUser = async (searchData) => {
+  try {
+    let query = {};
+
+    if (searchData.role) {
+      query.role = searchData.role;
+    }
+
+    if (searchData.searchParam) {
+      query.$or = [
+        { fullName: { $regex: searchData.searchParam, $options: "i" } },
+        { email: { $regex: searchData.searchParam, $options: "i" } },
+      ];
+    }
+
+    const sortOrder = searchData.sort === "DESC" ? -1 : 1;
+    const users = await User.find(query).sort({ fullName: sortOrder });
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      message: "Users retrieved successfully",
+      data: users,
+    };
+  } catch (error) {
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+      data: null,
+    };
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
   createUser,
   updateUser,
   deleteUser,
+  searchUser,
 };
