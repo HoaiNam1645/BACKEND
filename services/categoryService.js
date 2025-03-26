@@ -5,7 +5,6 @@ const getAllCategories = async (req) => {
   try {
     const categories = await Category.find();
     const baseUrl = `${req.protocol}://${req.get("host")}`;
-    console.log(baseUrl);
     
     const categoriesWithFullImageUrl = categories.map(category => ({
       ...category._doc,
@@ -17,9 +16,10 @@ const getAllCategories = async (req) => {
   }
 };
 
-const getCategoryById = async (id) => {
+const getCategoryById = async (req,id) => {
   try {
     const category = await Category.findById(id);
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
     if (!category) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
@@ -27,7 +27,11 @@ const getCategoryById = async (id) => {
         message: "Category not found",
       };
     }
-    return { code: STATUS_CODE.SUCCESS, success: true, data: category };
+    const categoryWithFullImageUrl = {
+      ...category.toObject(),
+      image_url: category.image_url ? `${baseUrl}${category.image_url}` : null
+    };
+    return { code: STATUS_CODE.SUCCESS, success: true, data: categoryWithFullImageUrl };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
@@ -55,19 +59,37 @@ const createCategory = async (req, res) => {
   }
 };
 
-const updateCategory = async (id, categoryData) => {
+const updateCategory = async (req, id, categoryData) => {
   try {
-    const category = await Category.findByIdAndUpdate(id, categoryData, {
-      new: true,
-    });
-    if (!category) {
+    // Kiểm tra category tồn tại
+    const existingCategory = await Category.findById(id);
+    if (!existingCategory) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
         success: false,
         message: "Category not found",
       };
     }
-    return { code: STATUS_CODE.SUCCESS, success: true, data: category };
+
+    // Xử lý ảnh mới nếu có
+    if (req.file) {
+      categoryData.image_url = `/img/${req.file.filename}`;
+    }
+
+    const category = await Category.findByIdAndUpdate(id, categoryData, {
+      new: true,
+    });
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const categoryWithFullImageUrl = {
+      ...category.toObject(),
+      image_url: category.image_url ? `${baseUrl}${category.image_url}` : null
+    };
+    console.log(
+      { code: STATUS_CODE.SUCCESS, success: true, data: categoryWithFullImageUrl }
+    );
+
+    return { code: STATUS_CODE.SUCCESS, success: true, data: categoryWithFullImageUrl };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
