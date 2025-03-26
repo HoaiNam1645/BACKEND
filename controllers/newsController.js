@@ -25,10 +25,16 @@ const deleteNews = async (req, res) => {
   return res.status(result.code).json(result);
 };
 
+const searchNews = async (req, res) => {
+  const result = await newsService.searchNews(req.body);
+  return res.status(result.code).json(result);
+};
+
 module.exports = {
   getAllNews,
   getNewsById,
   createNews,
   updateNews,
   deleteNews,
+  searchNews,
 };

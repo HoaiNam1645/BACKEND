@@ -70,11 +70,36 @@ const deleteOrder = async (id) => {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
 };
+const searchOrder = async (dataSearch) => {
+  try {
+    let query = {};
+    if (dataSearch.status) {
+      query.status = dataSearch.status;
+    }
 
+    const sortOrder = dataSearch.sort === "DESC" ? -1 : 1;
+    const orders = await Order.find(query).sort({ totalAmount: sortOrder });
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      message: "Orders retrieved successfully",
+      data: orders,
+    };
+  } catch (error) {
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+      data: null,
+    };
+  }
+};
 module.exports = {
   getAllOrders,
   getOrderById,
   createOrder,
   updateOrder,
   deleteOrder,
+  searchOrder,
 };

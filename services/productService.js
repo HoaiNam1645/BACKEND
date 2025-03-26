@@ -73,10 +73,41 @@ const deleteProduct = async (id) => {
   }
 };
 
+const searchProduct = async (searchData) => {
+  try {
+    let query = {};
+
+    if (searchData.categoryId) {
+      query.categoryId = searchData.categoryId;
+    }
+
+    if (searchData.name) {
+      query.name = { $regex: searchData.name, $options: "i" };
+    }
+    const sortOrder = searchData.sort === "DESC" ? -1 : 1;
+    const products = await Product.find(query).sort({ price: sortOrder });
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      message: "Products retrieved successfully",
+      data: products,
+    };
+  } catch (error) {
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+      data: null,
+    };
+  }
+};
+
 module.exports = {
   getAllProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  searchProduct,
 };

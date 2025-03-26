@@ -25,10 +25,16 @@ const deleteOrder = async (req, res) => {
   return res.status(result.code).json(result);
 };
 
+const searchOrder = async (req, res) => {
+  const result = await orderService.searchOrder(req.body);
+  return res.status(result.code).json(result);
+};
+
 module.exports = {
   getAllOrders,
   getOrderById,
   createOrder,
   updateOrder,
   deleteOrder,
+  searchOrder,
 };
