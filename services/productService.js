@@ -1,18 +1,31 @@
 const Product = require("../models/Product");
 const { STATUS_CODE } = require("../Helper/enums");
 
-const getAllProducts = async () => {
+const getAllProducts = async (req) => {
   try {
-    const products = await Product.find();
-    return { code: STATUS_CODE.SUCCESS, success: true, data: products };
+    const categoryId = req.query.category;
+    
+    const query = categoryId ? { categoryId } : {};
+    
+    const products = await Product.find(query);
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const productsWithFullImageUrl = products.map(product => ({
+      ...product._doc,
+      image_url: product.image_url ? `${baseUrl}${product.image_url}` : null
+    }));
+
+    return { code: STATUS_CODE.SUCCESS, success: true, data: productsWithFullImageUrl };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
 };
 
-const getProductById = async (id) => {
+const getProductById = async (req,id) => {
   try {
     const product = await Product.findById(id);
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
     if (!product) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
@@ -20,34 +33,68 @@ const getProductById = async (id) => {
         message: "Product not found",
       };
     }
+
+    const productWithFullImageUrl = {
+      ...product.toObject(),
+      image_url: product.image_url ? `${baseUrl}${product.image_url}` : null
+    };
+    return { code: STATUS_CODE.SUCCESS, success: true, data: productWithFullImageUrl };
+  } catch (error) {
+    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+  }
+};
+
+const createProduct = async (req, res) => {
+  try {
+    const { name, description, price, stock, categoryId } = req.body;
+
+    if (!name || !description || !price || !stock || !categoryId) {
+      return { code: STATUS_CODE.BAD_REQUEST, success: false, message: "Vui lòng điền đầy đủ thông tin." };
+    }
+
+    const existingProduct = await Product.findOne({ name: name.trim() });
+    if (existingProduct) {
+      return { code: STATUS_CODE.BAD_REQUEST, success: false, message: "Tên sản phẩm đã tồn tại." };
+    }
+
+    const imageUrl = req.file ? `/img/${req.file.filename}` : "";
+
+    const product = await Product.create({ name, description, price, stock, categoryId, image_url: imageUrl });
+    
     return { code: STATUS_CODE.SUCCESS, success: true, data: product };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
 };
 
-const createProduct = async (productData) => {
+const updateProduct = async (req,id, productData) => {
   try {
-    const product = await Product.create(productData);
-    return { code: STATUS_CODE.SUCCESS, success: true, data: product };
-  } catch (error) {
-    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
-  }
-};
+    const existingProduct = await Product.findById(id);
+    if (!existingProduct) {
+      return {
+        code: STATUS_CODE.BAD_REQUEST,
+        success: false,
+        message: "Product not found",
+      };
+    }
 
-const updateProduct = async (id, productData) => {
-  try {
-    const product = await Product.findByIdAndUpdate(id, productData, {
+    if (req.file) {
+      productData.image_url = `/img/${req.file.filename}`;
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(id, productData, {
       new: true,
     });
-    if (!product) {
-      return {
-        code: STATUS_CODE.BAD_REQUEST,
-        success: false,
-        message: "Product not found",
-      };
-    }
-    return { code: STATUS_CODE.SUCCESS, success: true, data: product };
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const productWithFullImageUrl = {
+      ...updatedProduct.toObject(),
+      image_url: updatedProduct.image_url ? `${baseUrl}${updatedProduct.image_url}` : null
+    };
+
+    
+    console.log('productWithFullImageUrl',productWithFullImageUrl);
+    return { code: STATUS_CODE.SUCCESS, success: true, data: productWithFullImageUrl };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }

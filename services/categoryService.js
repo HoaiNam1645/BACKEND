@@ -61,7 +61,6 @@ const createCategory = async (req, res) => {
 
 const updateCategory = async (req, id, categoryData) => {
   try {
-    // Kiểm tra category tồn tại
     const existingCategory = await Category.findById(id);
     if (!existingCategory) {
       return {
@@ -71,7 +70,6 @@ const updateCategory = async (req, id, categoryData) => {
       };
     }
 
-    // Xử lý ảnh mới nếu có
     if (req.file) {
       categoryData.image_url = `/img/${req.file.filename}`;
     }
@@ -85,9 +83,6 @@ const updateCategory = async (req, id, categoryData) => {
       ...category.toObject(),
       image_url: category.image_url ? `${baseUrl}${category.image_url}` : null
     };
-    console.log(
-      { code: STATUS_CODE.SUCCESS, success: true, data: categoryWithFullImageUrl }
-    );
 
     return { code: STATUS_CODE.SUCCESS, success: true, data: categoryWithFullImageUrl };
   } catch (error) {
