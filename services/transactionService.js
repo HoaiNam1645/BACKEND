@@ -74,11 +74,37 @@ const deleteTransaction = async (id) => {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
 };
+const searchTransaction = async (searchData) => {
+  try {
+    let query = {};
+    if (searchData.orderId) {
+      query.orderId = { $regex: searchData.orderId, $options: "i" };
+    }
+    if (searchData.status) {
+      query.status = searchData.status;
+    }
+    const transaction = await Transaction.find(query).sort({ createdAt: -1 });
 
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      message: "Transaction retrieved successfully",
+      data: transaction,
+    };
+  } catch (error) {
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+      data: null,
+    };
+  }
+};
 module.exports = {
   getAllTransactions,
   getTransactionById,
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  searchTransaction,
 };

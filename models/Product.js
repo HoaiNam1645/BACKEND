@@ -8,6 +8,7 @@ const ProductSchema = new mongoose.Schema(
     stock: { type: Number, required: true, default: 0 },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
     image_url: { type: String, default: "" },
+    type: { type: Number },
   },
   { timestamps: true }
 );

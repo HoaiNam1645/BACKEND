@@ -80,7 +80,7 @@ const searchNews = async (searchData) => {
         { author: { $regex: searchData.searchParam, $options: "i" } },
       ];
     }
-    const news = await News.find(query);
+    const news = await News.find(query).sort({ author: 1 });
 
     return {
       code: STATUS_CODE.SUCCESS,
