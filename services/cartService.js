@@ -1,14 +1,15 @@
 const Cart = require("../models/Cart");
 const { STATUS_CODE } = require("../Helper/enums");
 
-const getAllCarts = async () => {
+const getAllCarts = async (userId) => {
   try {
-    const carts = await Cart.find();
+    const carts = await Cart.find({userId});
     return { code: STATUS_CODE.SUCCESS, success: true, data: carts };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
 };
+
 
 const getCartById = async (id) => {
   try {

@@ -14,6 +14,9 @@ const OrderItemSchema = new mongoose.Schema(
     },
     quantity: { type: Number, required: true },
     price: { type: Number, required: true },
+    name: { type: String, required: true },
+    description: { type: String, default: "" },
+    image_url: { type: String, default: "" },
   },
   { timestamps: true }
 );

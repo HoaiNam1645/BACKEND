@@ -1,5 +1,7 @@
 const Order = require("../models/Order");
+const OrderItem = require("../models/OrderItem");
 const { STATUS_CODE } = require("../Helper/enums");
+const OrderItemService = require("./orderItemService");
 
 const getAllOrders = async () => {
   try {
@@ -10,9 +12,18 @@ const getAllOrders = async () => {
   }
 };
 
-const getOrderById = async (id) => {
+const getAllOrdersByUser = async (userId) => {
   try {
-    const order = await Order.findById(id);
+    const orders = await Order.find({ userId });
+    return { code: STATUS_CODE.SUCCESS, success: true, data: orders };
+  } catch (error) {
+    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+  }
+};
+
+const getOrderById = async (orderId) => {
+  try {
+    const order = await Order.findById(orderId);
     if (!order) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
@@ -20,7 +31,12 @@ const getOrderById = async (id) => {
         message: "Order not found",
       };
     }
-    return { code: STATUS_CODE.SUCCESS, success: true, data: order };
+    const orderItemList = await OrderItem.find({ orderId });
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: { order: order, orderItemList: orderItemList },
+    };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
@@ -29,6 +45,12 @@ const getOrderById = async (id) => {
 const createOrder = async (orderData) => {
   try {
     const order = await Order.create(orderData);
+    const orderId = order._id;
+    orderData.orderItemList.forEach((item) => {
+      let data = item;
+      data.orderId = orderId;
+      OrderItemService.createOrderItem(data);
+    });
     return { code: STATUS_CODE.SUCCESS, success: true, data: order };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
@@ -102,4 +124,5 @@ module.exports = {
   updateOrder,
   deleteOrder,
   searchOrder,
+  getAllOrdersByUser,
 };
