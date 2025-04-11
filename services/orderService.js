@@ -1,5 +1,6 @@
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
+const Cart = require("../models/Cart");
 const { STATUS_CODE } = require("../Helper/enums");
 const OrderItemService = require("./orderItemService");
 
@@ -46,14 +47,25 @@ const createOrder = async (orderData) => {
   try {
     const order = await Order.create(orderData);
     const orderId = order._id;
-    orderData.orderItemList.forEach((item) => {
-      let data = item;
-      data.orderId = orderId;
-      OrderItemService.createOrderItem(data);
-    });
-    return { code: STATUS_CODE.SUCCESS, success: true, data: order };
+
+    for (const item of orderData.orderItemList) {
+      const data = { ...item, orderId };
+      await OrderItemService.createOrderItem(data);
+    }
+
+    await Cart.deleteMany({ userId: orderData.userId });
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: order,
+    };
   } catch (error) {
-    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
   }
 };
 
