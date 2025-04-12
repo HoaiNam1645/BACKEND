@@ -3,6 +3,7 @@ const OrderItem = require("../models/OrderItem");
 const Cart = require("../models/Cart");
 const { STATUS_CODE } = require("../Helper/enums");
 const OrderItemService = require("./orderItemService");
+const mongoose = require("mongoose");
 
 const getAllOrders = async () => {
   try {
@@ -15,10 +16,16 @@ const getAllOrders = async () => {
 
 const getAllOrdersByUser = async (userId) => {
   try {
-    const orders = await Order.find({ userId });
+    const objectId = new mongoose.Types.ObjectId(userId);
+    const orders = await Order.find({ userId: objectId });
+
     return { code: STATUS_CODE.SUCCESS, success: true, data: orders };
   } catch (error) {
-    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
   }
 };
 

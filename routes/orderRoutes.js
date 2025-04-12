@@ -4,7 +4,7 @@ const orderController = require("../controllers/orderController");
 const router = express.Router();
 
 router.get("/getAll", orderController.getAllOrders);
-router.get("/getAllByUser/:id", orderController.getAllOrders);
+router.get("/getAllByUser/:id", orderController.getAllOrdersByUser);
 router.get("/get/:id", orderController.getOrderById);
 router.post("/create", orderController.createOrder);
 router.post("/update/:id", orderController.updateOrder);
