@@ -1,7 +1,7 @@
 const cartService = require("../services/cartService");
 
 const getAllCarts = async (req, res) => {
-  const result = await cartService.getAllCarts();
+  const result = await cartService.getAllCarts(req.params.id);
   return res.status(result.code).json(result);
 };
 
@@ -25,10 +25,16 @@ const deleteCart = async (req, res) => {
   return res.status(result.code).json(result);
 };
 
+const clearCart = async (req, res) => {
+  const result = await cartService.clearCart(req.params.idUser);
+  return res.status(result.code).json(result);
+};
+
 module.exports = {
   getAllCarts,
   getCartById,
   createCart,
   updateCart,
   deleteCart,
+  clearCart,
 };

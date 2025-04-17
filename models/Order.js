@@ -9,15 +9,18 @@ const OrderSchema = new mongoose.Schema(
       required: true,
     },
     totalAmount: { type: Number, required: true },
+    address: { type: String },
+    phoneNumber: { type: String },
     status: {
       type: String,
       enum: Object.values(ORDER_STATUS),
       default: "pending",
     },
+    recipientName: { type: String },
     paymentMethod: {
       type: String,
       enum: Object.values(PAYMENT_METHOD),
-      required: true,
+      default: "credit_card",
     },
   },
   { timestamps: true }

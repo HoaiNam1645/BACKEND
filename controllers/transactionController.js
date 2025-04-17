@@ -28,10 +28,16 @@ const deleteTransaction = async (req, res) => {
   return res.status(result.code).json(result);
 };
 
+const searchTransaction = async (req, res) => {
+  const result = await transactionService.searchTransaction(req.body);
+  return res.status(result.code).json(result);
+};
+
 module.exports = {
   getAllTransactions,
   getTransactionById,
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  searchTransaction,
 };

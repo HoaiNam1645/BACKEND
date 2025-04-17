@@ -5,6 +5,11 @@ const getAllOrders = async (req, res) => {
   return res.status(result.code).json(result);
 };
 
+const getAllOrdersByUser = async (req, res) => {
+  const result = await orderService.getAllOrdersByUser(req.params.id);
+  return res.status(result.code).json(result);
+};
+
 const getOrderById = async (req, res) => {
   const result = await orderService.getOrderById(req.params.id);
   return res.status(result.code).json(result);
@@ -37,4 +42,5 @@ module.exports = {
   updateOrder,
   deleteOrder,
   searchOrder,
+  getAllOrdersByUser,
 };

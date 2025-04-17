@@ -1,14 +1,15 @@
 const Cart = require("../models/Cart");
 const { STATUS_CODE } = require("../Helper/enums");
 
-const getAllCarts = async () => {
+const getAllCarts = async (userId) => {
   try {
-    const carts = await Cart.find();
+    const carts = await Cart.find({userId});
     return { code: STATUS_CODE.SUCCESS, success: true, data: carts };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
 };
+
 
 const getCartById = async (id) => {
   try {
@@ -28,7 +29,18 @@ const getCartById = async (id) => {
 
 const createCart = async (cartData) => {
   try {
-    const cart = await Cart.create(cartData);
+    const userId = cartData.userId;
+    const productId = cartData.productId;
+    const quantity = cartData.quantity;
+    let cart = await Cart.findOne({ userId, productId });
+
+    if (cart) {
+      cart.quantity += quantity;
+      await cart.save();
+    } else {
+      cart = new Cart({ userId, productId, quantity });
+      await cart.save();
+    }
     return { code: STATUS_CODE.SUCCESS, success: true, data: cart };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
@@ -71,10 +83,25 @@ const deleteCart = async (id) => {
   }
 };
 
+const clearCart = async (idUser) => {
+  try {
+    const result = await Cart.deleteMany(idUser);
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      message: "Cart clear successfully",
+      data: result,
+    };
+  } catch (error) {
+    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+  }
+};
+
 module.exports = {
   getAllCarts,
   getCartById,
   createCart,
   updateCart,
   deleteCart,
+  clearCart,
 };

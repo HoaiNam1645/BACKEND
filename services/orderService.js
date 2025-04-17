@@ -1,5 +1,9 @@
 const Order = require("../models/Order");
+const OrderItem = require("../models/OrderItem");
+const Cart = require("../models/Cart");
 const { STATUS_CODE } = require("../Helper/enums");
+const OrderItemService = require("./orderItemService");
+const mongoose = require("mongoose");
 
 const getAllOrders = async () => {
   try {
@@ -10,9 +14,24 @@ const getAllOrders = async () => {
   }
 };
 
-const getOrderById = async (id) => {
+const getAllOrdersByUser = async (userId) => {
   try {
-    const order = await Order.findById(id);
+    const objectId = new mongoose.Types.ObjectId(userId);
+    const orders = await Order.find({ userId: objectId });
+
+    return { code: STATUS_CODE.SUCCESS, success: true, data: orders };
+  } catch (error) {
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
+  }
+};
+
+const getOrderById = async (orderId) => {
+  try {
+    const order = await Order.findById(orderId);
     if (!order) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
@@ -20,7 +39,12 @@ const getOrderById = async (id) => {
         message: "Order not found",
       };
     }
-    return { code: STATUS_CODE.SUCCESS, success: true, data: order };
+    const orderItemList = await OrderItem.find({ orderId });
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: { order: order, orderItemList: orderItemList },
+    };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
@@ -29,9 +53,26 @@ const getOrderById = async (id) => {
 const createOrder = async (orderData) => {
   try {
     const order = await Order.create(orderData);
-    return { code: STATUS_CODE.SUCCESS, success: true, data: order };
+    const orderId = order._id;
+
+    for (const item of orderData.orderItemList) {
+      const data = { ...item, orderId };
+      await OrderItemService.createOrderItem(data);
+    }
+
+    await Cart.deleteMany({ userId: orderData.userId });
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: order,
+    };
   } catch (error) {
-    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
   }
 };
 
@@ -102,4 +143,5 @@ module.exports = {
   updateOrder,
   deleteOrder,
   searchOrder,
+  getAllOrdersByUser,
 };
