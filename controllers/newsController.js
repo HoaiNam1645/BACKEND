@@ -1,22 +1,22 @@
 const newsService = require("../services/newsService");
 
 const getAllNews = async (req, res) => {
-  const result = await newsService.getAllNews();
+  const result = await newsService.getAllNews(req);
   return res.status(result.code).json(result);
 };
 
 const getNewsById = async (req, res) => {
-  const result = await newsService.getNewsById(req.params.id);
+  const result = await newsService.getNewsById(req, req.params.id);
   return res.status(result.code).json(result);
 };
 
 const createNews = async (req, res) => {
-  const result = await newsService.createNews(req.body);
+  const result = await newsService.createNews(req);
   return res.status(result.code).json(result);
 };
 
 const updateNews = async (req, res) => {
-  const result = await newsService.updateNews(req.params.id, req.body);
+  const result = await newsService.updateNews(req, req.params.id);
   return res.status(result.code).json(result);
 };
 
