@@ -159,6 +159,42 @@ const searchOrder = async (dataSearch) => {
     };
   }
 };
+
+const updateStatusOrder = async (orderId, status) => {
+  try {
+    const objectId = new mongoose.Types.ObjectId(orderId);
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      objectId,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedOrder) {
+      return {
+        code: STATUS_CODE.BAD_REQUEST,
+        success: false,
+        message: "Order not found",
+        data: null,
+      };
+    }
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      message: "Order status updated successfully",
+      data: updatedOrder,
+    };
+  } catch (error) {
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+      data: null,
+    };
+  }
+};
+
 module.exports = {
   getAllOrders,
   getOrderById,
@@ -167,4 +203,5 @@ module.exports = {
   deleteOrder,
   searchOrder,
   getAllOrdersByUser,
+  updateStatusOrder,
 };

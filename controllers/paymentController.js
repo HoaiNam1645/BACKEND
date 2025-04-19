@@ -1,4 +1,5 @@
 const paymentService = require("../services/paymentService");
+const orderService = require("../services/orderService");
 
 const createPayment = (req, res) => {
   try {
@@ -9,11 +10,12 @@ const createPayment = (req, res) => {
   }
 };
 
-const vnpayReturn = (req, res) => {
+const vnpayReturn = async (req, res) => {
   try {
     let vnp_ResponseCode = req.query.vnp_ResponseCode;
     const txnRef = req.query.vnp_TxnRef;
     if (vnp_ResponseCode === "00") {
+      await orderService.updateStatusOrder(txnRef, "processing");
       return res.redirect(
         `http://localhost:3000/order-detail/${txnRef}?status=success`
       );
