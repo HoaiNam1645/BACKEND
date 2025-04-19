@@ -39,14 +39,35 @@ const getOrderById = async (req) => {
         message: "Order not found",
       };
     }
-    const orderItemList = await OrderItemService.getAllOrderItemsByOrderId(req);
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    const orderItems = await OrderItem.find({ orderId: order._id }).populate(
+      "productId"
+    );
+
+    const orderItemList = orderItems.map((item) => ({
+      _id: item._id,
+      quantity: item.quantity,
+      productId: item.productId?._id,
+      name: item.productId?.name,
+      price: item.productId?.price,
+      image_url: item.productId?.image_url
+        ? `${baseUrl}${item.productId.image_url}`
+        : null,
+    }));
+
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,
-      data: { order: order, orderItemList: orderItemList },
+      data: { order, orderItemList },
     };
   } catch (error) {
-    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
   }
 };
 
@@ -60,7 +81,8 @@ const createOrder = async (orderData) => {
       await OrderItemService.createOrderItem(data);
     }
 
-    await Cart.deleteMany({ userId: orderData.userId });
+    const userObjectId = new mongoose.Types.ObjectId(orderData.userId);
+    await Cart.deleteMany({ userId: userObjectId });
 
     return {
       code: STATUS_CODE.SUCCESS,
