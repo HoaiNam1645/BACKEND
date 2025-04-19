@@ -8,6 +8,7 @@ router.get("/getAllByUser/:id", orderController.getAllOrdersByUser);
 router.get("/get/:id", orderController.getOrderById);
 router.post("/create", orderController.createOrder);
 router.post("/update/:id", orderController.updateOrder);
+router.post("/update-status", orderController.updateStatusOrder);
 router.post("/search", orderController.searchOrder);
 router.delete("/delete/:id", orderController.deleteOrder);
 

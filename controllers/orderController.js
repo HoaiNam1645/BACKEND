@@ -35,6 +35,14 @@ const searchOrder = async (req, res) => {
   return res.status(result.code).json(result);
 };
 
+const updateStatusOrder = async (req, res) => {
+  const result = await orderService.updateStatusOrder(
+    req.body.orderId,
+    req.body.status
+  );
+  return res.status(result.code).json(result);
+};
+
 module.exports = {
   getAllOrders,
   getOrderById,
@@ -43,4 +51,5 @@ module.exports = {
   deleteOrder,
   searchOrder,
   getAllOrdersByUser,
+  updateStatusOrder,
 };
