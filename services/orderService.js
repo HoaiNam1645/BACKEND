@@ -29,9 +29,9 @@ const getAllOrdersByUser = async (userId) => {
   }
 };
 
-const getOrderById = async (orderId) => {
+const getOrderById = async (req) => {
   try {
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(req.params.id);
     if (!order) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
@@ -39,7 +39,7 @@ const getOrderById = async (orderId) => {
         message: "Order not found",
       };
     }
-    const orderItemList = await OrderItem.find({ orderId });
+    const orderItemList = await OrderItemService.getAllOrderItemsByOrderId(req);
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,

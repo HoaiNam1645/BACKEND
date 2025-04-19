@@ -1,7 +1,7 @@
 const orderItemService = require("../services/orderItemService");
 
 const getAllOrderItems = async (req, res) => {
-  const result = await orderItemService.getAllOrderItems();
+  const result = await orderItemService.getAllOrderItems(req);
   return res.status(result.code).json(result);
 };
 
@@ -11,7 +11,7 @@ const getOrderItemById = async (req, res) => {
 };
 
 const createOrderItem = async (req, res) => {
-  const result = await orderItemService.createOrderItem(req.body);
+  const result = await orderItemService.createOrderItem(req);
   return res.status(result.code).json(result);
 };
 
