@@ -71,14 +71,15 @@ const getOrderById = async (req) => {
   }
 };
 
-const createOrder = async (orderData) => {
+const createOrder = async (req) => {
   try {
+    const orderData = req.body;
     const order = await Order.create(orderData);
     const orderId = order._id;
 
     for (const item of orderData.orderItemList) {
       const data = { ...item, orderId };
-      await OrderItemService.createOrderItem(data);
+      await OrderItemService.createOrderItem(req, data);
     }
 
     const userObjectId = new mongoose.Types.ObjectId(orderData.userId);

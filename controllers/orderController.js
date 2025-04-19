@@ -16,7 +16,7 @@ const getOrderById = async (req, res) => {
 };
 
 const createOrder = async (req, res) => {
-  const result = await orderService.createOrder(req.body);
+  const result = await orderService.createOrder(req);
   return res.status(result.code).json(result);
 };
 

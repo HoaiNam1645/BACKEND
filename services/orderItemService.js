@@ -61,12 +61,12 @@ const getOrderItemById = async (id) => {
   }
 };
 
-const createOrderItem = async (req) => {
+const createOrderItem = async (req, data) => {
   try {
     const imageUrl = req.file ? `/img/${req.file.filename}` : "";
 
     const orderItem = await OrderItem.create({
-      ...req.body,
+      ...data,
       image_url: imageUrl,
     });
     return { code: STATUS_CODE.SUCCESS, success: true, data: orderItem };
