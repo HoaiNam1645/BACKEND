@@ -1,7 +1,7 @@
 const cartService = require("../services/cartService");
 
 const getAllCarts = async (req, res) => {
-  const result = await cartService.getAllCarts(req.params.id);
+  const result = await cartService.getAllCarts(req);
   return res.status(result.code).json(result);
 };
 

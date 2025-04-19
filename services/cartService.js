@@ -1,19 +1,40 @@
 const Cart = require("../models/Cart");
 const { STATUS_CODE } = require("../Helper/enums");
 
-const getAllCarts = async (userId) => {
+const getAllCarts = async (req) => {
   try {
-    const carts = await Cart.find({userId});
-    return { code: STATUS_CODE.SUCCESS, success: true, data: carts };
+    const carts = await Cart.find({ userId: req.params.id }).populate(
+      "productId"
+    );
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    const cartWithProductInfo = carts.map((cart) => ({
+      _id: cart._id,
+      userId: cart.userId,
+      productId: cart.productId._id,
+      quantity: cart.quantity,
+      image_url: cart.productId.image_url
+        ? `${baseUrl}${cart.productId.image_url}`
+        : null,
+      name: cart.productId.name,
+      price: cart.productId.price,
+    }));
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: cartWithProductInfo,
+    };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
 };
 
-
 const getCartById = async (id) => {
   try {
     const cart = await Cart.findById(id);
+
     if (!cart) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
