@@ -137,12 +137,16 @@ const deleteOrder = async (id) => {
 const searchOrder = async (dataSearch) => {
   try {
     let query = {};
-    if (dataSearch.status) {
-      query.status = dataSearch.status;
+    if (dataSearch.searchQuery) {
+      query.$or = [
+        { phoneNumber: { $regex: dataSearch.searchQuery, $options: "i" } },
+        { address: { $regex: dataSearch.searchQuery, $options: "i" } },
+        { recipientName: { $regex: dataSearch.searchQuery, $options: "i" } },
+      ];
     }
 
     const sortOrder = dataSearch.sort === "DESC" ? -1 : 1;
-    const orders = await Order.find(query).sort({ totalAmount: sortOrder });
+    const orders = await Order.find(query).sort({ status: sortOrder });
 
     return {
       code: STATUS_CODE.SUCCESS,
