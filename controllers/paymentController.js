@@ -10,9 +10,23 @@ const createPayment = (req, res) => {
 };
 
 const vnpayReturn = (req, res) => {
-  let vnp_ResponseCode = req.query.vnp_ResponseCode;
-  let status = vnp_ResponseCode === "00" ? "success" : "failed";
-  res.json({ success: true, status });
+  try {
+    let vnp_ResponseCode = req.query.vnp_ResponseCode;
+    const txnRef = req.query.vnp_TxnRef;
+    if (vnp_ResponseCode === "00") {
+      return res.redirect(
+        `http://localhost:3000/order-detail/${txnRef}?status=success`
+      );
+    } else {
+      return res.redirect(
+        `http://localhost:3000/order-detail/${txnRef}?status=fail`
+      );
+    }
+  } catch (error) {
+    return res.redirect(
+      `http://localhost:3000/order-detail/${txnRef}?status=error`
+    );
+  }
 };
 
 module.exports = { createPayment, vnpayReturn };
