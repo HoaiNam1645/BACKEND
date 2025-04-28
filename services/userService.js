@@ -2,29 +2,51 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const { STATUS_CODE } = require("../Helper/enums");
 
-const getAllUsers = async () => {
+const getAllUsers = async (req) => {
   try {
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
     const users = await User.find().select("-password").lean();
+
+    const usersWithFullAvatarUrl = users.map((user) => ({
+      ...user,
+      avatarUrl: user.avatarUrl ? `${baseUrl}${user.avatarUrl}` : null,
+    }));
+
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,
-      data: users,
+      data: usersWithFullAvatarUrl,
     };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
 };
 
-const getUserById = async (id) => {
+const getUserById = async (req, id) => {
   try {
-    const user = await User.findById(id).select("-password");
-    if (!user)
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    const user = await User.findById(id).select("-password").lean();
+
+    if (!user) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
         success: false,
         message: "User not found",
       };
-    return { code: STATUS_CODE.SUCCESS, success: true, data: user };
+    }
+
+    const userWithFullAvatarUrl = {
+      ...user,
+      avatarUrl: user.avatarUrl ? `${baseUrl}${user.avatarUrl}` : null,
+    };
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: userWithFullAvatarUrl,
+    };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
@@ -56,20 +78,40 @@ const createUser = async (userData) => {
   }
 };
 
-const updateUser = async (id, userData) => {
+const updateUser = async (req, id, userData) => {
   try {
     if (userData.password) {
       const saltRounds = 10;
       userData.password = await bcrypt.hash(userData.password, saltRounds);
     }
-    const user = await User.findByIdAndUpdate(id, userData, { new: true });
-    if (!user)
+
+    if (req.file) {
+      userData.avatarUrl = `/img/${req.file.filename}`;
+    }
+
+    const user = await User.findByIdAndUpdate(id, userData, { new: true })
+      .select("-password")
+      .lean();
+
+    if (!user) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
         success: false,
         message: "User not found",
       };
-    return { code: STATUS_CODE.SUCCESS, success: true, data: user };
+    }
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const userWithFullAvatarUrl = {
+      ...user,
+      avatarUrl: user.avatarUrl ? `${baseUrl}${user.avatarUrl}` : null,
+    };
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: userWithFullAvatarUrl,
+    };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
@@ -78,19 +120,24 @@ const updateUser = async (id, userData) => {
 const deleteUser = async (id) => {
   try {
     const user = await User.findByIdAndDelete(id);
-    if (!user)
+    if (!user) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
         success: false,
         message: "User not found",
       };
-    return { code: STATUS_CODE.SUCCESS, success: true, data: user };
+    }
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: user,
+    };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
 };
 
-const searchUser = async (searchData) => {
+const searchUser = async (req, searchData) => {
   try {
     let query = {};
 
@@ -106,13 +153,23 @@ const searchUser = async (searchData) => {
     }
 
     const sortOrder = searchData.sort === "DESC" ? -1 : 1;
-    const users = await User.find(query).sort({ fullName: sortOrder });
+    const users = await User.find(query)
+      .select("-password")
+      .sort({ fullName: sortOrder })
+      .lean();
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    const usersWithFullAvatarUrl = users.map((user) => ({
+      ...user,
+      avatarUrl: user.avatarUrl ? `${baseUrl}${user.avatarUrl}` : null,
+    }));
 
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,
       message: "Users retrieved successfully",
-      data: users,
+      data: usersWithFullAvatarUrl,
     };
   } catch (error) {
     return {
