@@ -1,7 +1,8 @@
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
+const Product = require("../models/Product");
 const Cart = require("../models/Cart");
-const { STATUS_CODE } = require("../Helper/enums");
+const { STATUS_CODE, ORDER_STATUS } = require("../Helper/enums");
 const OrderItemService = require("./orderItemService");
 const mongoose = require("mongoose");
 
@@ -199,6 +200,106 @@ const updateStatusOrder = async (orderId, status) => {
   }
 };
 
+const getSalesStatistics = async (dateData, req) => {
+  try {
+    const startDate = new Date(dateData.startDate);
+    const endDate = new Date(dateData.endDate);
+
+    if (isNaN(startDate) || isNaN(endDate)) {
+      return {
+        code: STATUS_CODE.BAD_REQUEST,
+        success: false,
+        message: "Invalid date range provided.",
+      };
+    }
+
+    const validOrders = await Order.find({
+      status: { $nin: [ORDER_STATUS.PENDING, ORDER_STATUS.CANCELED] },
+      createdAt: { $gte: startDate, $lte: endDate },
+    }).select("_id");
+
+    const orderIds = validOrders.map((order) => order._id);
+
+    // Lấy 10 sản phẩm bán chạy nhất trong khoảng thời gian đã cho
+    const topProducts = await OrderItem.aggregate([
+      {
+        $match: {
+          orderId: { $in: orderIds },
+        },
+      },
+      {
+        $group: {
+          _id: "$productId", // nhóm theo productId
+          totalQuantitySold: { $sum: "$quantity" }, // tổng số lượng bán được
+        },
+      },
+      { $sort: { totalQuantitySold: -1 } }, // sắp xếp giảm dần theo số lượng bán
+      { $limit: 10 }, // chỉ lấy top 10 sản phẩm bán chạy nhất
+    ]);
+
+    // Lấy thông tin sản phẩm từ bảng Product bao gồm name và image_url
+    const productIds = topProducts.map((product) => product._id);
+    const products = await Product.find({
+      _id: { $in: productIds },
+    }).select("name image_url");
+
+    // Kết hợp thông tin từ OrderItem với thông tin từ Product
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const topProductsWithDetails = topProducts.map((product) => {
+      const productInfo = products.find(
+        (prod) => prod._id.toString() === product._id.toString()
+      );
+      return {
+        productId: product._id,
+        name: productInfo?.name || "Unknown Product",
+        image_url: productInfo?.image_url
+          ? `${baseUrl}${productInfo.image_url}`
+          : null,
+        totalQuantitySold: product.totalQuantitySold,
+      };
+    });
+
+    // Thống kê doanh thu theo tháng
+    const monthlyStats = await Order.aggregate([
+      {
+        $match: {
+          status: { $nin: [ORDER_STATUS.PENDING, ORDER_STATUS.CANCELED] },
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          totalRevenue: { $sum: "$totalAmount" },
+          totalOrders: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { "_id.year": 1, "_id.month": 1 },
+      },
+    ]);
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: {
+        monthlyStats,
+        topProducts: topProductsWithDetails,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching sales statistics:", error);
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
+  }
+};
+
 module.exports = {
   getAllOrders,
   getOrderById,
@@ -208,4 +309,5 @@ module.exports = {
   searchOrder,
   getAllOrdersByUser,
   updateStatusOrder,
+  getSalesStatistics,
 };

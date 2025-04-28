@@ -20,11 +20,13 @@ const vnpayReturn = async (req, res) => {
         `http://localhost:3000/order-detail/${txnRef}?status=success`
       );
     } else {
+      await orderService.updateStatusOrder(txnRef, "canceled");
       return res.redirect(
         `http://localhost:3000/order-detail/${txnRef}?status=fail`
       );
     }
   } catch (error) {
+    await orderService.updateStatusOrder(txnRef, "canceled");
     return res.redirect(
       `http://localhost:3000/order-detail/${txnRef}?status=error`
     );

@@ -2,20 +2,17 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const { STATUS_CODE } = require("../Helper/enums");
 
-// Helper function để format avatar URL
 const formatAvatarUrl = (req, avatarUrl) => {
   if (!avatarUrl) return null;
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   return avatarUrl.startsWith("http") ? avatarUrl : `${baseUrl}${avatarUrl}`;
 };
 
-// Helper để format 1 user
 const formatUser = (req, user) => ({
   ...user,
   avatarUrl: formatAvatarUrl(req, user.avatarUrl),
 });
 
-// Helper để format list users
 const formatUsers = (req, users) => users.map((user) => formatUser(req, user));
 
 const getAllUsers = async (req) => {
