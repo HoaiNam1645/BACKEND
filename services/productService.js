@@ -28,8 +28,11 @@ const getAllProducts = async (req) => {
 
 const getProductById = async (req, id) => {
   try {
-    const product = await Product.findById(id);
     const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    const product = await Product.findById(id)
+      .populate("categoryId", "name") 
+      .lean(); 
 
     if (!product) {
       return {
@@ -40,10 +43,13 @@ const getProductById = async (req, id) => {
     }
 
     const productWithFullImageUrl = {
-      ...product.toObject(),
+      ...product,
       image_url: product.image_url ? `${baseUrl}${product.image_url}` : null,
+      categoryName: product.categoryId ? product.categoryId.name : null, 
     };
+
     const reviews = await ReviewService.getAllReviewsByProductId(id, baseUrl);
+
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,

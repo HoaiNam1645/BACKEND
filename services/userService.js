@@ -2,21 +2,29 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const { STATUS_CODE } = require("../Helper/enums");
 
+// Helper function để format avatar URL
+const formatAvatarUrl = (req, avatarUrl) => {
+  if (!avatarUrl) return null;
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  return avatarUrl.startsWith("http") ? avatarUrl : `${baseUrl}${avatarUrl}`;
+};
+
+// Helper để format 1 user
+const formatUser = (req, user) => ({
+  ...user,
+  avatarUrl: formatAvatarUrl(req, user.avatarUrl),
+});
+
+// Helper để format list users
+const formatUsers = (req, users) => users.map((user) => formatUser(req, user));
+
 const getAllUsers = async (req) => {
   try {
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-
     const users = await User.find().select("-password").lean();
-
-    const usersWithFullAvatarUrl = users.map((user) => ({
-      ...user,
-      avatarUrl: user.avatarUrl ? `${baseUrl}${user.avatarUrl}` : null,
-    }));
-
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,
-      data: usersWithFullAvatarUrl,
+      data: formatUsers(req, users),
     };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
@@ -25,10 +33,7 @@ const getAllUsers = async (req) => {
 
 const getUserById = async (req, id) => {
   try {
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-
     const user = await User.findById(id).select("-password").lean();
-
     if (!user) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
@@ -36,16 +41,10 @@ const getUserById = async (req, id) => {
         message: "User not found",
       };
     }
-
-    const userWithFullAvatarUrl = {
-      ...user,
-      avatarUrl: user.avatarUrl ? `${baseUrl}${user.avatarUrl}` : null,
-    };
-
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,
-      data: userWithFullAvatarUrl,
+      data: formatUser(req, user),
     };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
@@ -68,7 +67,11 @@ const createUser = async (userData) => {
 
     const user = await User.create(userData);
 
-    return { code: STATUS_CODE.SUCCESS, success: true, data: user };
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: user,
+    };
   } catch (error) {
     return {
       success: false,
@@ -101,16 +104,10 @@ const updateUser = async (req, id, userData) => {
       };
     }
 
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const userWithFullAvatarUrl = {
-      ...user,
-      avatarUrl: user.avatarUrl ? `${baseUrl}${user.avatarUrl}` : null,
-    };
-
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,
-      data: userWithFullAvatarUrl,
+      data: formatUser(req, user),
     };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
@@ -139,7 +136,7 @@ const deleteUser = async (id) => {
 
 const searchUser = async (req, searchData) => {
   try {
-    let query = {};
+    const query = {};
 
     if (searchData.role) {
       query.role = searchData.role;
@@ -158,18 +155,11 @@ const searchUser = async (req, searchData) => {
       .sort({ fullName: sortOrder })
       .lean();
 
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-
-    const usersWithFullAvatarUrl = users.map((user) => ({
-      ...user,
-      avatarUrl: user.avatarUrl ? `${baseUrl}${user.avatarUrl}` : null,
-    }));
-
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,
       message: "Users retrieved successfully",
-      data: usersWithFullAvatarUrl,
+      data: formatUsers(req, users),
     };
   } catch (error) {
     return {
