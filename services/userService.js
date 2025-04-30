@@ -91,7 +91,7 @@ const updateUser = async (req, id, userData) => {
     if (req.file) {
       userData.avatarUrl = `/img/${req.file.filename}`;
     }
-
+    console.log(req.file);
     const user = await User.findByIdAndUpdate(id, userData, { new: true })
       .select("-password")
       .lean();
