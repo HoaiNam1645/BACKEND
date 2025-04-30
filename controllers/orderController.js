@@ -42,7 +42,10 @@ const updateStatusOrder = async (req, res) => {
   );
   return res.status(result.code).json(result);
 };
-
+const getSalesStatistics = async (req, res) => {
+  const result = await orderService.getSalesStatistics(req.body,req);
+  return res.status(result.code).json(result);
+};
 module.exports = {
   getAllOrders,
   getOrderById,
@@ -52,4 +55,5 @@ module.exports = {
   searchOrder,
   getAllOrdersByUser,
   updateStatusOrder,
+  getSalesStatistics,
 };
