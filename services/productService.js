@@ -5,16 +5,26 @@ const ReviewService = require("./reviewService");
 const getAllProducts = async (req) => {
   try {
     const categoryId = req.query.category;
-
     const query = categoryId ? { categoryId } : {};
 
     const products = await Product.find(query);
 
     const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const productsWithFullImageUrl = products.map((product) => ({
-      ...product._doc,
-      image_url: product.image_url ? `${baseUrl}${product.image_url}` : null,
-    }));
+    const productsWithFullImageUrl = await Promise.all(
+      products.map(async (product) => {
+        const stats = await ReviewService.getReviewStatsByProductId(
+          product._id
+        );
+        return {
+          ...product._doc,
+          image_url: product.image_url
+            ? `${baseUrl}${product.image_url}`
+            : null,
+          ratingAverage: stats.data?.average || 0,
+          ratingCount: stats.data?.count || 0,
+        };
+      })
+    );
 
     return {
       code: STATUS_CODE.SUCCESS,
@@ -42,10 +52,14 @@ const getProductById = async (req, id) => {
       };
     }
 
+    const stats = await ReviewService.getReviewStatsByProductId(id);
+
     const productWithFullImageUrl = {
       ...product,
       image_url: product.image_url ? `${baseUrl}${product.image_url}` : null,
       categoryName: product.categoryId ? product.categoryId.name : null,
+      ratingAverage: stats.data?.average || 0,
+      ratingCount: stats.data?.count || 0,
     };
 
     const reviews = await ReviewService.getAllReviewsByProductId(id, baseUrl);
@@ -167,14 +181,33 @@ const searchProduct = async (searchData) => {
     if (searchData.name) {
       query.name = { $regex: searchData.name, $options: "i" };
     }
+
     const sortOrder = searchData.sort === "DESC" ? -1 : 1;
     const products = await Product.find(query).sort({ price: sortOrder });
+
+    // Lấy thông tin đánh giá cho mỗi sản phẩm
+    const baseUrl = `${searchData.protocol}://${searchData.host}`;
+    const productsWithRating = await Promise.all(
+      products.map(async (product) => {
+        const stats = await ReviewService.getReviewStatsByProductId(
+          product._id
+        );
+        return {
+          ...product._doc,
+          image_url: product.image_url
+            ? `${baseUrl}${product.image_url}`
+            : null,
+          ratingAverage: stats.data?.average || 0,
+          ratingCount: stats.data?.count || 0,
+        };
+      })
+    );
 
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,
       message: "Products retrieved successfully",
-      data: products,
+      data: productsWithRating,
     };
   } catch (error) {
     return {
@@ -259,5 +292,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   searchProduct,
-  getTopProducts
+  getTopProducts,
 };
