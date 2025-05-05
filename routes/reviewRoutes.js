@@ -8,5 +8,6 @@ router.get("/get/:id", reviewController.getReviewById);
 router.post("/create", reviewController.createReview);
 router.post("/update/:id", reviewController.updateReview); // Dùng POST thay vì PUT
 router.delete("/delete/:id", reviewController.deleteReview);
+router.get("/getReviewStart/:id", reviewController.getReviewStatsByProductId);
 
 module.exports = router;

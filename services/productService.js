@@ -31,8 +31,8 @@ const getProductById = async (req, id) => {
     const baseUrl = `${req.protocol}://${req.get("host")}`;
 
     const product = await Product.findById(id)
-      .populate("categoryId", "name") 
-      .lean(); 
+      .populate("categoryId", "name")
+      .lean();
 
     if (!product) {
       return {
@@ -45,7 +45,7 @@ const getProductById = async (req, id) => {
     const productWithFullImageUrl = {
       ...product,
       image_url: product.image_url ? `${baseUrl}${product.image_url}` : null,
-      categoryName: product.categoryId ? product.categoryId.name : null, 
+      categoryName: product.categoryId ? product.categoryId.name : null,
     };
 
     const reviews = await ReviewService.getAllReviewsByProductId(id, baseUrl);
@@ -185,6 +185,72 @@ const searchProduct = async (searchData) => {
     };
   }
 };
+const getTopProducts = async (req) => {
+  try {
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    // 1. Top 10 sản phẩm bán chạy nhất
+    const bestSellingProducts = await Product.find()
+      .sort({ sold: -1 })
+      .limit(10)
+      .lean();
+
+    const bestSellingWithImage = await Promise.all(
+      bestSellingProducts.map(async (product) => {
+        const stats = await ReviewService.getReviewStatsByProductId(
+          product._id
+        );
+        return {
+          ...product,
+          image_url: product.image_url
+            ? `${baseUrl}${product.image_url}`
+            : null,
+          ratingAverage: stats.data?.average || 0,
+          ratingCount: stats.data?.count || 0,
+        };
+      })
+    );
+
+    // 2. Top 10 sản phẩm được đánh giá cao nhất
+    const allProducts = await Product.find().lean();
+
+    const productsWithRating = await Promise.all(
+      allProducts.map(async (product) => {
+        const stats = await ReviewService.getReviewStatsByProductId(
+          product._id
+        );
+        return {
+          ...product,
+          image_url: product.image_url
+            ? `${baseUrl}${product.image_url}`
+            : null,
+          ratingAverage: stats.data?.average || 0,
+          ratingCount: stats.data?.count || 0,
+        };
+      })
+    );
+
+    const topRatedProducts = productsWithRating
+      .filter((p) => p.ratingCount > 0)
+      .sort((a, b) => b.ratingAverage - a.ratingAverage)
+      .slice(0, 10);
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: {
+        bestSelling: bestSellingWithImage,
+        topRated: topRatedProducts,
+      },
+    };
+  } catch (error) {
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
+  }
+};
 
 module.exports = {
   getAllProducts,
@@ -193,4 +259,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   searchProduct,
+  getTopProducts
 };

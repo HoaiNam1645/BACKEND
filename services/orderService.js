@@ -308,6 +308,7 @@ const reduceProductStockByOrderId = async (orderId) => {
       const product = await Product.findById(item.productId);
       if (product) {
         product.stock = Math.max(0, product.stock - item.quantity);
+        product.sold += item.quantity;
         await product.save();
       }
     }

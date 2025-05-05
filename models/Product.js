@@ -9,6 +9,7 @@ const ProductSchema = new mongoose.Schema(
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
     image_url: { type: String, default: "" },
     type: { type: Number },
+    sold: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

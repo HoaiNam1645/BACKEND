@@ -95,6 +95,41 @@ const getAllReviewsByProductId = async (productId, baseUrl) => {
     return error.message;
   }
 };
+const getReviewStatsByProductId = async (productId) => {
+  try {
+    const reviews = await Review.find({ productId });
+
+    if (!reviews.length) {
+      return {
+        code: STATUS_CODE.SUCCESS,
+        success: true,
+        data: {
+          count: 0,
+          average: 0,
+        },
+      };
+    }
+
+    const count = reviews.length;
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const average = parseFloat((totalRating / count).toFixed(1));
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: {
+        count,
+        average,
+      },
+    };
+  } catch (error) {
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
+  }
+};
 
 module.exports = {
   getAllReviews,
@@ -103,4 +138,5 @@ module.exports = {
   updateReview,
   deleteReview,
   getAllReviewsByProductId,
+  getReviewStatsByProductId,
 };

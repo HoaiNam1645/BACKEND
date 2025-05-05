@@ -6,17 +6,21 @@ const getAllProducts = async (req, res) => {
 };
 
 const getProductById = async (req, res) => {
-  const result = await productService.getProductById(req,req.params.id);
+  const result = await productService.getProductById(req, req.params.id);
   return res.status(result.code).json(result);
 };
 
 const createProduct = async (req, res) => {
-  const result = await productService.createProduct(req,res);
+  const result = await productService.createProduct(req, res);
   return res.status(result.code).json(result);
 };
 
 const updateProduct = async (req, res) => {
-  const result = await productService.updateProduct(req,req.params.id, req.body);
+  const result = await productService.updateProduct(
+    req,
+    req.params.id,
+    req.body
+  );
   return res.status(result.code).json(result);
 };
 
@@ -29,7 +33,10 @@ const searchProduct = async (req, res) => {
   const result = await productService.searchProduct(req.body);
   return res.status(result.code).json(result);
 };
-
+const getTopProducts = async (req, res) => {
+  const result = await productService.getTopProducts(req);
+  return res.status(result.code).json(result);
+};
 module.exports = {
   getAllProducts,
   getProductById,
@@ -37,4 +44,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   searchProduct,
+  getTopProducts,
 };
