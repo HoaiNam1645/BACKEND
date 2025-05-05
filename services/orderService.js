@@ -300,6 +300,32 @@ const getSalesStatistics = async (dateData, req) => {
   }
 };
 
+const reduceProductStockByOrderId = async (orderId) => {
+  try {
+    const orderItems = await OrderItem.find({ orderId });
+
+    for (const item of orderItems) {
+      const product = await Product.findById(item.productId);
+      if (product) {
+        product.stock = Math.max(0, product.stock - item.quantity);
+        await product.save();
+      }
+    }
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      message: "Product stock updated successfully",
+    };
+  } catch (error) {
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
+  }
+};
+
 module.exports = {
   getAllOrders,
   getOrderById,
@@ -310,4 +336,5 @@ module.exports = {
   getAllOrdersByUser,
   updateStatusOrder,
   getSalesStatistics,
+  reduceProductStockByOrderId,
 };

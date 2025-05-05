@@ -16,6 +16,7 @@ const vnpayReturn = async (req, res) => {
     const txnRef = req.query.vnp_TxnRef;
     if (vnp_ResponseCode === "00") {
       await orderService.updateStatusOrder(txnRef, "processing");
+      await orderService.reduceProductStockByOrderId(txnRef);
       return res.redirect(
         `http://localhost:3000/order-detail/${txnRef}?status=success`
       );

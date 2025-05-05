@@ -40,9 +40,7 @@ const getChatHistory = async (userId) => {
 
 const sendMessage = async (userId, userMessage) => {
   try {
-    let chat = await ChatbotMessage.findOne({
-      userId: userId,
-    });
+    let chat = await ChatbotMessage.findOne({ userId });
 
     if (!chat) {
       chat = new ChatbotMessage({ userId, messages: [] });
@@ -58,11 +56,12 @@ const sendMessage = async (userId, userMessage) => {
         },
         { role: "user", content: `Câu hỏi: ${userMessage}` },
       ],
-      temperature: 0.8,
+      temperature: 0.3,
     });
 
     const intent =
       intentResponse?.choices?.[0]?.message?.content?.trim() || "general";
+
     let botResponse = "";
     let messages = chat.messages.slice(-6).map((msg) => ({
       role: msg.role,
@@ -75,46 +74,56 @@ const sendMessage = async (userId, userMessage) => {
         content: chat.messages[0].content,
       });
     }
+
     if (intent === "product") {
       const products = await Product.find()
         .populate("categoryId", "name")
         .lean();
       const categories = await Category.find().lean();
 
+      const categoryList = categories.map((c) => `- ${c.name}`).join("<br>");
+
       const productList = products
         .map(
           (p) =>
-            `- ${p.name} (Danh mục: ${p.categoryId?.name || "Chưa có"}): ${
+            `<a href="/products/${p._id}" target="_blank">🛒 <strong>${
+              p.name
+            }</strong></a> (Danh mục: ${p.categoryId?.name || "Chưa có"}): ${
               p.description
-            } (Giá: ${p.price} VND) : (Số lượng: ${p.stock})`
+            } (Giá: ${p.price} VND, Còn: ${p.stock})`
         )
-        .join("\n");
-      const categoryList = categories.map((c) => `- ${c.name}`).join("\n");
+        .join("<br>");
+
       messages.unshift({
         role: "system",
         content:
-          "Bạn là một trợ lý AI có thể trò chuyện và trả lời câu hỏi của khách hàng. Nếu không có sản phẩm nào phù hợp với yêu cầu khách hàng hoặc sản phẩm đã hết hàng thì hãy trả lời cho phù hợp và hãy đề nghị khách hàng hỏi lại theo hướng khác. ",
+          "Bạn là một trợ lý AI có thể tư vấn sản phẩm, giúp khách hàng tìm đúng sản phẩm. Nếu không có sản phẩm phù hợp, hãy đề nghị khách hàng hỏi lại theo cách khác, đừng lặp lại lời xin lỗi nhiều lần.",
       });
+
       messages.push({
         role: "user",
-        content: `Dưới đây là danh mục sản phẩm có sẵn:\n${categoryList}\n\nDưới đây là danh sách sản phẩm chi tiết:\n${productList}\n\nNgười dùng hỏi: "${userMessage}"`,
+        content: `Danh mục hiện có:<br>${categoryList}<br><br>Sản phẩm nổi bật:<br>${productList}<br><br>Người dùng hỏi: "${userMessage}"`,
       });
     } else {
       messages.unshift({
         role: "system",
         content:
-          "Bạn là một trợ lý AI có thể trò chuyện và trả lời câu hỏi của khách hàng.",
+          "Bạn là một trợ lý AI có thể trò chuyện và trả lời câu hỏi của khách hàng. Tránh lặp lại lời xin lỗi quá nhiều lần.",
       });
+
       messages.push({ role: "user", content: userMessage });
     }
+
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages: messages,
+      messages,
       temperature: 0.8,
     });
+
     botResponse =
       response?.choices?.[0]?.message?.content?.trim() ||
-      "Xin lỗi, tôi không hiểu câu hỏi của bạn.";
+      "Tôi đang xử lý thông tin, bạn vui lòng hỏi lại theo cách khác nhé.";
+
     chat.messages.push({ role: "user", content: userMessage });
     chat.messages.push({ role: "system", content: botResponse });
     await chat.save();
