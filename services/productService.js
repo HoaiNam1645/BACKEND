@@ -170,8 +170,9 @@ const deleteProduct = async (id) => {
   }
 };
 
-const searchProduct = async (searchData) => {
+const searchProduct = async (req,searchData) => {
   try {
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
     let query = {};
 
     if (searchData.categoryId) {
@@ -186,7 +187,6 @@ const searchProduct = async (searchData) => {
     const products = await Product.find(query).sort({ price: sortOrder });
 
     // Lấy thông tin đánh giá cho mỗi sản phẩm
-    const baseUrl = `${searchData.protocol}://${searchData.host}`;
     const productsWithRating = await Promise.all(
       products.map(async (product) => {
         const stats = await ReviewService.getReviewStatsByProductId(

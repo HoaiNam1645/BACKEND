@@ -30,7 +30,7 @@ const deleteProduct = async (req, res) => {
 };
 
 const searchProduct = async (req, res) => {
-  const result = await productService.searchProduct(req.body);
+  const result = await productService.searchProduct(req,req.body);
   return res.status(result.code).json(result);
 };
 const getTopProducts = async (req, res) => {

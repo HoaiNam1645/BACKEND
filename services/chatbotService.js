@@ -40,12 +40,30 @@ const getChatHistory = async (userId) => {
 
 const sendMessage = async (userId, userMessage) => {
   try {
+    // Tìm hoặc tạo đoạn chat
     let chat = await ChatbotMessage.findOne({ userId });
-
     if (!chat) {
       chat = new ChatbotMessage({ userId, messages: [] });
     }
 
+    // Lưu tin nhắn user mới nhất
+    chat.messages.push({ role: "user", content: userMessage });
+
+    // Lấy các tin nhắn gần nhất (tối đa 6) + tin nhắn đầu tiên
+    let messages = chat.messages.slice(-6).map(({ role, content }) => ({ role, content }));
+    if (chat.messages.length > 0) {
+      messages.unshift({
+        role: chat.messages[0].role,
+        content: chat.messages[0].content,
+      });
+    }
+
+    // Lấy toàn bộ nội dung user đã nhắn
+    const m2 = chat.messages
+      .filter((msg) => msg.role === "user")
+      .map((msg) => msg.content);
+
+    // Gọi OpenAI để xác định intent
     const intentResponse = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -54,77 +72,64 @@ const sendMessage = async (userId, userMessage) => {
           content:
             "Bạn là một mô hình AI giúp xác định xem một câu hỏi có liên quan đến tư vấn sản phẩm hay không. Nếu câu hỏi liên quan đến sản phẩm, trả lời 'product'. Nếu không, trả lời 'general'.",
         },
-        { role: "user", content: `Câu hỏi: ${userMessage}` },
+        { role: "user", content: m2.join("\n") },
       ],
       temperature: 0.3,
     });
 
     const intent =
-      intentResponse?.choices?.[0]?.message?.content?.trim() || "general";
-
-    let botResponse = "";
-    let messages = chat.messages.slice(-6).map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
-
-    if (chat.messages.length > 0) {
-      messages.unshift({
-        role: chat.messages[0].role,
-        content: chat.messages[0].content,
-      });
-    }
-
+      intentResponse?.choices?.[0]?.message?.content?.trim().toLowerCase() || "general";
+    console.log(intent);
+    // Tạo prompt tùy theo intent
     if (intent === "product") {
-      const products = await Product.find()
+      const products = await Product.find({ stock: { $gt: 0 } })
         .populate("categoryId", "name")
         .lean();
       const categories = await Category.find().lean();
 
       const categoryList = categories.map((c) => `- ${c.name}`).join("<br>");
-
       const productList = products
         .map(
           (p) =>
-            `<a href="/products/${p._id}" target="_blank">🛒 <strong>${
-              p.name
-            }</strong></a> (Danh mục: ${p.categoryId?.name || "Chưa có"}): ${
-              p.description
-            } (Giá: ${p.price} VND, Còn: ${p.stock})`
+            `<div class="product-item"><a href="/product-left-sidebar/${p._id}" target="_blank">🛒 <strong>${p.name}</strong></a> (Danh mục: ${p.categoryId?.name || "Chưa có"}): ${p.description} <b>(Giá: ${p.price} VND, Còn: ${p.stock})</b></div>`
         )
         .join("<br>");
 
       messages.unshift({
         role: "system",
-        content:
-          "Bạn là một trợ lý AI có thể tư vấn sản phẩm, giúp khách hàng tìm đúng sản phẩm. Nếu không có sản phẩm phù hợp, hãy đề nghị khách hàng hỏi lại theo cách khác, đừng lặp lại lời xin lỗi nhiều lần.",
+        content: `Bạn là một trợ lý AI tư vấn sản phẩm. 
+        - Đoạn văn bản trả về phải được định dạng bằng HTML.
+        - Không dùng thư viện, chỉ dùng css thuần.
+        - Giữ nguyên các thẻ HTML như <div>, <a>, <strong>, class="product-item",... để frontend áp dụng CSS.
+        - Không được dùng markdown như [link](url).
+        - Chỉ trả về các sản phẩm có liên quan đến câu hỏi của người dùng và các sản phẩm còn hàng trong product list mà user cung cấp.`,
       });
 
       messages.push({
         role: "user",
-        content: `Danh mục hiện có:<br>${categoryList}<br><br>Sản phẩm nổi bật:<br>${productList}<br><br>Người dùng hỏi: "${userMessage}"`,
+        content: `Danh mục hiện có:<br>${categoryList}<br><br>Sản phẩm nổi bật:<br><div class="product-list">${productList}</div><br><br>Người dùng hỏi: "${userMessage}"`,
       });
     } else {
       messages.unshift({
         role: "system",
-        content:
-          "Bạn là một trợ lý AI có thể trò chuyện và trả lời câu hỏi của khách hàng. Tránh lặp lại lời xin lỗi quá nhiều lần.",
+        content: `Bạn là một trợ lý AI hỗ trợ trò chuyện. Nếu có hiển thị HTML (ví dụ link sản phẩm), luôn giữ nguyên định dạng HTML.`,
       });
 
       messages.push({ role: "user", content: userMessage });
     }
 
+    // Gọi OpenAI để lấy câu trả lời cuối cùng
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages,
       temperature: 0.8,
     });
 
-    botResponse =
+    const botResponse =
       response?.choices?.[0]?.message?.content?.trim() ||
       "Tôi đang xử lý thông tin, bạn vui lòng hỏi lại theo cách khác nhé.";
 
-    chat.messages.push({ role: "user", content: userMessage });
+    // Lưu phản hồi vào chat
     chat.messages.push({ role: "system", content: botResponse });
     await chat.save();
 
@@ -134,9 +139,17 @@ const sendMessage = async (userId, userMessage) => {
       data: botResponse,
     };
   } catch (error) {
-    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+    console.error("sendMessage error:", error);
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
   }
 };
+
+
+
 
 const deleteChatHistory = async (userId) => {
   try {
