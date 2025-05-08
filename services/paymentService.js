@@ -17,11 +17,11 @@ const createPaymentUrl = (req) => {
     let secretKey = vnpayConfig.hashSecret;
     let vnpUrl = vnpayConfig.vnpUrl;
     let returnUrl = vnpayConfig.returnUrl;
-    let orderId = moment(date).format("DDHHmmss");
+    let orderId = req.body.orderId;
     let amount = req.body.amount;
-    let bankCode = req.body.bankCode;
+    let bankCode = "NCB";
 
-    let locale = req.body.language;
+    let locale = "vn";
     if (locale === null || locale === "") {
       locale = "vn";
     }

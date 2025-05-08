@@ -40,82 +40,123 @@ const getChatHistory = async (userId) => {
 
 const sendMessage = async (userId, userMessage) => {
   try {
-    let chat = await ChatbotMessage.findOne({
-      userId: userId,
-    });
-
+    // Tìm hoặc tạo đoạn chat
+    let chat = await ChatbotMessage.findOne({ userId });
     if (!chat) {
       chat = new ChatbotMessage({ userId, messages: [] });
     }
 
+    // Lưu tin nhắn mới của user
+    chat.messages.push({ role: "user", content: userMessage });
+
+    // Lấy các tin nhắn gần nhất
+    let messages = chat.messages.map(({ role, content }) => ({
+      role,
+      content,
+    }));
+    // if (chat.messages.length > 0) {
+    //   messages.unshift({
+    //     role: chat.messages[0].role,
+    //     content: chat.messages[0].content,
+    //   });
+    // }
+
+    // ==== XÁC ĐỊNH INTENT DỰA TRÊN userMessage ====
     const intentResponse = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content:
-            "Bạn là một mô hình AI giúp xác định xem một câu hỏi có liên quan đến tư vấn sản phẩm hay không. Nếu câu hỏi liên quan đến sản phẩm, trả lời 'product'. Nếu không, trả lời 'general'.",
+          content: `
+            Bạn là một AI chuyên phân tích mục đích câu hỏi của người dùng.
+            Phân loại câu hỏi theo 3 nhóm:
+            - 'in_store' nếu người dùng hỏi về sản phẩm hiện có, muốn mua, hỏi giá, tồn kho... liên quan đến cửa hàng đang bán.
+            - 'out_of_scope' nếu câu hỏi chỉ mang tính thông tin chung (ví dụ: điện thoại nào tốt, xu hướng công nghệ...)
+            - 'general' nếu là câu chào hỏi, trò chuyện không liên quan đến sản phẩm.
+            Chỉ trả về một từ: in_store, out_of_scope, hoặc general.
+          `,
         },
-        { role: "user", content: `Câu hỏi: ${userMessage}` },
+        { role: "user", content: userMessage },
       ],
-      temperature: 0.8,
+      temperature: 0,
     });
 
     const intent =
-      intentResponse?.choices?.[0]?.message?.content?.trim() || "general";
-    let botResponse = "";
-    let messages = chat.messages.slice(-6).map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+      intentResponse?.choices?.[0]?.message?.content?.trim().toLowerCase() ||
+      "general";
 
-    if (chat.messages.length > 0) {
-      messages.unshift({
-        role: chat.messages[0].role,
-        content: chat.messages[0].content,
-      });
-    }
-    if (intent === "product") {
-      const products = await Product.find()
+    // ==== TẠO PROMPT TÙY THEO INTENT ====
+    if (intent === "in_store") {
+      const products = await Product.find({ stock: { $gt: 0 } })
         .populate("categoryId", "name")
         .lean();
       const categories = await Category.find().lean();
 
+      const categoryList = categories.map((c) => `- ${c.name}`).join("<br>");
       const productList = products
         .map(
           (p) =>
-            `- ${p.name} (Danh mục: ${p.categoryId?.name || "Chưa có"}): ${
-              p.description
-            } (Giá: ${p.price} VND) : (Số lượng: ${p.stock})`
+            `<div class="product-item"><a href="/product-left-sidebar/${
+              p._id
+            }" target="_blank">🛒 <strong>${p.name}</strong></a> (Danh mục: ${
+              p.categoryId?.name || "Chưa có"
+            }): ${p.description} <b>(Giá: ${p.price} VND, Còn: ${
+              p.stock
+            })</b></div>`
         )
-        .join("\n");
-      const categoryList = categories.map((c) => `- ${c.name}`).join("\n");
+        .join("<br>");
+
       messages.unshift({
         role: "system",
-        content:
-          "Bạn là một trợ lý AI có thể trò chuyện và trả lời câu hỏi của khách hàng. Nếu không có sản phẩm nào phù hợp với yêu cầu khách hàng hoặc sản phẩm đã hết hàng thì hãy trả lời cho phù hợp và hãy đề nghị khách hàng hỏi lại theo hướng khác. ",
+        content: `Bạn là một trợ lý AI tư vấn sản phẩm.
+        - Đoạn văn bản trả về phải được định dạng bằng HTML.
+        - Không dùng thư viện, chỉ dùng CSS thuần.
+        - Giữ nguyên các thẻ HTML như <div>, <a>, <strong>, class="product-item",...
+        - Không được dùng markdown như [link](url).
+        - Chỉ trả về các sản phẩm có liên quan đến câu hỏi của người dùng.
+        - Phải thêm đoạn giới thiệu và kết thúc trong mỗi lần trả lời và mỗi lần là lời thoại khác nhau.
+        - Nếu trong danh sách không có sản phẩm phù hợp với yêu cầu thì báo lại cho khách theo cách lịch sự nhất.
+        - Không tự động đề xuất các sản phẩm không có trong danh sách.
+        - Mọi thông tin sản phẩm bạn cung cấp **chỉ được lấy từ danh sách được cung cấp**.
+        - Tuyệt đối **không tự nghĩ ra, đề xuất hay thêm các sản phẩm khác ngoài danh sách**.
+        - Nếu **không có sản phẩm phù hợp**, hãy trả lời lịch sự rằng hiện tại cửa hàng chưa có sản phẩm theo yêu cầu và gợi ý người dùng thử yêu cầu khác.
+        - Câu trả lời phải được định dạng HTML (ví dụ: <div>, <a>, <strong>, class="product-item"...).
+        - Không sử dụng markdown (vd: [link](url)).
+        - Mỗi lần trả lời phải có đoạn **mở đầu và kết thúc thân thiện, linh hoạt mỗi lần**, không lặp lại hoàn toàn.`,
       });
+
       messages.push({
         role: "user",
-        content: `Dưới đây là danh mục sản phẩm có sẵn:\n${categoryList}\n\nDưới đây là danh sách sản phẩm chi tiết:\n${productList}\n\nNgười dùng hỏi: "${userMessage}"`,
+        content: `Danh mục hiện có:<br>${categoryList}<br><br>Sản phẩm liên quan:<br><div class="product-list">${productList}</div><br><br>Người dùng hỏi: "${userMessage}"`,
       });
+    } else if (intent === "out_of_scope") {
+      messages.unshift({
+        role: "system",
+        content: `Bạn là một trợ lý AI cho cửa hàng. Câu hỏi của người dùng không liên quan đến sản phẩm có trong cửa hàng, nên hãy phản hồi lịch sự rằng bạn chỉ hỗ trợ tư vấn các sản phẩm đang có trong kho.`,
+      });
+
+      messages.push({ role: "user", content: userMessage });
     } else {
       messages.unshift({
         role: "system",
-        content:
-          "Bạn là một trợ lý AI có thể trò chuyện và trả lời câu hỏi của khách hàng.",
+        content: `Bạn là một trợ lý AI hỗ trợ trò chuyện. Nếu có hiển thị HTML (ví dụ link sản phẩm), luôn giữ nguyên định dạng HTML.`,
       });
+
       messages.push({ role: "user", content: userMessage });
     }
+
+    // ==== GỌI OPENAI ĐỂ TRẢ LỜI CUỐI CÙNG ====
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages: messages,
+      messages,
       temperature: 0.8,
     });
-    botResponse =
+
+    const botResponse =
       response?.choices?.[0]?.message?.content?.trim() ||
-      "Xin lỗi, tôi không hiểu câu hỏi của bạn.";
-    chat.messages.push({ role: "user", content: userMessage });
+      "Tôi đang xử lý thông tin, bạn vui lòng hỏi lại theo cách khác nhé.";
+
+    // ==== LƯU PHẢN HỒI VÀ TRẢ VỀ ====
     chat.messages.push({ role: "system", content: botResponse });
     await chat.save();
 
@@ -125,7 +166,12 @@ const sendMessage = async (userId, userMessage) => {
       data: botResponse,
     };
   } catch (error) {
-    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+    console.error("sendMessage error:", error);
+    return {
+      code: STATUS_CODE.ERROR,
+      success: false,
+      message: error.message,
+    };
   }
 };
 

@@ -25,10 +25,15 @@ const deleteReview = async (req, res) => {
   return res.status(result.code).json(result);
 };
 
+const getReviewStatsByProductId = async (req, res) => {
+  const result = await reviewService.getReviewStatsByProductId(req.params.id);
+  return res.status(result.code).json(result);
+};
 module.exports = {
   getAllReviews,
   getReviewById,
   createReview,
   updateReview,
   deleteReview,
+  getReviewStatsByProductId,
 };

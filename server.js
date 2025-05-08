@@ -2,6 +2,8 @@ const express = require("express");
 const connectDB = require("./config/db");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const session = require("express-session");
+const passport = require("./config/passport");
 const paymentRoutes = require("./routes/paymentRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -24,6 +26,19 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.static("public"));
+
+// Set up session
+app.use(
+  session({
+    secret: process.env.JWT_SECRET,
+    resave: false,
+    saveUninitialized: false
+  })
+);
+
+// Initialize Passport and session
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);

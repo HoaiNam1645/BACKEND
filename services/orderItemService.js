@@ -1,10 +1,45 @@
 const OrderItem = require("../models/OrderItem");
 const { STATUS_CODE } = require("../Helper/enums");
 
-const getAllOrderItems = async () => {
+const getAllOrderItems = async (req) => {
   try {
     const orderItems = await OrderItem.find();
-    return { code: STATUS_CODE.SUCCESS, success: true, data: orderItems };
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const orderItemsWithFullImageUrl = orderItems.map((orderItem) => ({
+      ...orderItem._doc,
+      image_url: orderItem.image_url
+        ? `${baseUrl}${orderItem.image_url}`
+        : null,
+    }));
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: orderItemsWithFullImageUrl,
+    };
+  } catch (error) {
+    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+  }
+};
+
+const getAllOrderItemsByOrderId = async (req) => {
+  try {
+    const orderId = req.params.id;
+
+    const orderItems = await OrderItem.find({ orderId: orderId });
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const orderItemsWithFullImageUrl = orderItems.map((orderItem) => ({
+      ...orderItem._doc,
+      image_url: orderItem.image_url
+        ? `${baseUrl}${orderItem.image_url}`
+        : null,
+    }));
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: orderItemsWithFullImageUrl,
+    };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
@@ -26,9 +61,14 @@ const getOrderItemById = async (id) => {
   }
 };
 
-const createOrderItem = async (orderItemData) => {
+const createOrderItem = async (req, data) => {
   try {
-    const orderItem = await OrderItem.create(orderItemData);
+    const imageUrl = req.file ? `/img/${req.file.filename}` : "";
+
+    const orderItem = await OrderItem.create({
+      ...data,
+      image_url: imageUrl,
+    });
     return { code: STATUS_CODE.SUCCESS, success: true, data: orderItem };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
@@ -79,4 +119,5 @@ module.exports = {
   createOrderItem,
   updateOrderItem,
   deleteOrderItem,
+  getAllOrderItemsByOrderId,
 };

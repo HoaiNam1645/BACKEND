@@ -11,12 +11,12 @@ const getAllOrdersByUser = async (req, res) => {
 };
 
 const getOrderById = async (req, res) => {
-  const result = await orderService.getOrderById(req.params.id);
+  const result = await orderService.getOrderById(req);
   return res.status(result.code).json(result);
 };
 
 const createOrder = async (req, res) => {
-  const result = await orderService.createOrder(req.body);
+  const result = await orderService.createOrder(req);
   return res.status(result.code).json(result);
 };
 
@@ -35,6 +35,17 @@ const searchOrder = async (req, res) => {
   return res.status(result.code).json(result);
 };
 
+const updateStatusOrder = async (req, res) => {
+  const result = await orderService.updateStatusOrder(
+    req.body.orderId,
+    req.body.status
+  );
+  return res.status(result.code).json(result);
+};
+const getSalesStatistics = async (req, res) => {
+  const result = await orderService.getSalesStatistics(req.body,req);
+  return res.status(result.code).json(result);
+};
 module.exports = {
   getAllOrders,
   getOrderById,
@@ -43,4 +54,6 @@ module.exports = {
   deleteOrder,
   searchOrder,
   getAllOrdersByUser,
+  updateStatusOrder,
+  getSalesStatistics,
 };

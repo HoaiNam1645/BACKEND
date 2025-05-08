@@ -1,12 +1,12 @@
 const userService = require("../services/userService");
 
 const getAllUsers = async (req, res) => {
-  const result = await userService.getAllUsers();
+  const result = await userService.getAllUsers(req);
   return res.status(result.code).json(result);
 };
 
 const getUserById = async (req, res) => {
-  const result = await userService.getUserById(req.params.id);
+  const result = await userService.getUserById(req, req.params.id);
   return res.status(result.code).json(result);
 };
 
@@ -16,7 +16,7 @@ const createUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-  const result = await userService.updateUser(req.params.id, req.body);
+  const result = await userService.updateUser(req, req.params.id, req.body);
   return res.status(result.code).json(result);
 };
 
@@ -26,7 +26,7 @@ const deleteUser = async (req, res) => {
 };
 
 const searchUser = async (req, res) => {
-  const result = await userService.searchUser(req.body);
+  const result = await userService.searchUser(req, req.body);
   return res.status(result.code).json(result);
 };
 

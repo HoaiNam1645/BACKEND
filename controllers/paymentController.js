@@ -1,4 +1,5 @@
 const paymentService = require("../services/paymentService");
+const orderService = require("../services/orderService");
 
 const createPayment = (req, res) => {
   try {
@@ -9,10 +10,28 @@ const createPayment = (req, res) => {
   }
 };
 
-const vnpayReturn = (req, res) => {
-  let vnp_ResponseCode = req.query.vnp_ResponseCode;
-  let status = vnp_ResponseCode === "00" ? "success" : "failed";
-  res.json({ success: true, status });
+const vnpayReturn = async (req, res) => {
+  try {
+    let vnp_ResponseCode = req.query.vnp_ResponseCode;
+    const txnRef = req.query.vnp_TxnRef;
+    if (vnp_ResponseCode === "00") {
+      await orderService.updateStatusOrder(txnRef, "processing");
+      await orderService.reduceProductStockByOrderId(txnRef);
+      return res.redirect(
+        `http://localhost:3000/order-detail/${txnRef}?status=success`
+      );
+    } else {
+      await orderService.updateStatusOrder(txnRef, "canceled");
+      return res.redirect(
+        `http://localhost:3000/order-detail/${txnRef}?status=fail`
+      );
+    }
+  } catch (error) {
+    await orderService.updateStatusOrder(txnRef, "canceled");
+    return res.redirect(
+      `http://localhost:3000/order-detail/${txnRef}?status=error`
+    );
+  }
 };
 
 module.exports = { createPayment, vnpayReturn };
