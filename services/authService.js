@@ -72,4 +72,32 @@ const login = async ({ email, password }) => {
   }
 };
 
-module.exports = { register, login };
+const googleAuth = async (user) => {
+  try {
+    // Create JWT token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "3h" }
+    );
+
+    return {
+      code: STATUS_CODE.SUCCESS,
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          avataUrl: user.avatarUrl,
+        },
+      },
+    };
+  } catch (error) {
+    return { code: STATUS_CODE.ERROR, success: false, message: error.message };
+  }
+};
+
+module.exports = { register, login, googleAuth };
