@@ -6,13 +6,13 @@ const getAllCarts = async (req) => {
     const carts = await Cart.find({ userId: req.params.id }).populate(
       "productId"
     );
-    if (carts.length == 0) {
-      return {
-        code: STATUS_CODE.BAD_REQUEST,
-        success: false,
-        message: "Order not found",
-      };
-    }
+      // if (carts.length == 0) {
+      //   return {
+      //     code: STATUS_CODE.BAD_REQUEST,
+      //     success: true,
+      //     message: "Order not found",
+      //   };
+      // }
     const baseUrl = `${req.protocol}://${req.get("host")}`;
 
     const cartWithProductInfo = carts.map((cart) => ({
