@@ -13,14 +13,13 @@ const login = async (req, res) => {
 
 const googleCallback = async (req, res) => {
   try {
-    const result = await authService.googleAuth(req.user)
-    return res.status(result.code).json(result);
+    const result = await authService.googleAuth(req.user);
+    const token = result.data.token;
+    const userData = (JSON.stringify(result.data.user));
+    console.log('userData', `${process.env.FRONTEND_URL}?token=${token}&userData=${userData}`);
+    return res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userData=${userData}`);
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Authentication failed",
-      error: error.message
-    });
+    return res.redirect(`${process.env.FRONTEND_URL}?error=${encodeURIComponent(error.message)}`);
   }
 };
 
