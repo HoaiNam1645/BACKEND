@@ -113,14 +113,26 @@ const updateUser = async (req, id, userData) => {
 
 const deleteUser = async (id) => {
   try {
-    const user = await User.findByIdAndDelete(id);
-    if (!user) {
+    const userToDelete = await User.findById(id);
+    console.log(userToDelete);
+    console.log(userToDelete.role);
+    if (!userToDelete) {
       return {
         code: STATUS_CODE.BAD_REQUEST,
         success: false,
         message: "User not found",
       };
     }
+    
+    if (userToDelete.role === "supper_admin") {
+      return {
+        code: STATUS_CODE.BAD_REQUEST,
+        success: false,
+        message: "Không thể xoá admin này...",
+      };
+    }
+    
+    const user = await User.findByIdAndDelete(id);
     return {
       code: STATUS_CODE.SUCCESS,
       success: true,

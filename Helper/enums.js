@@ -1,6 +1,7 @@
 const USER_ROLE = {
   USER: "user",
   ADMIN: "admin",
+  SUPPER_ADMIN: "supper_admin"
 };
 
 const ORDER_STATUS = {
