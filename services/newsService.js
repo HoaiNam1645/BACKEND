@@ -58,7 +58,13 @@ const createNews = async (req) => {
       imageUrl 
     });
     
-    return { code: STATUS_CODE.SUCCESS, success: true, data: news };
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const newsWithFullImageUrl = {
+      ...news.toObject(),
+      imageUrl: news.imageUrl ? `${baseUrl}${news.imageUrl}` : null
+    };
+    
+    return { code: STATUS_CODE.SUCCESS, success: true, data: newsWithFullImageUrl };
   } catch (error) {
     return { code: STATUS_CODE.ERROR, success: false, message: error.message };
   }
